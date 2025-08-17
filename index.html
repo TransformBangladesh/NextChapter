@@ -2542,7 +2542,7 @@
 
             const connectMQTT = (roomId) => {
                 return new Promise((resolve, reject) => {
-                    mqttClient = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, MQTT_CLIENT_ID);
+                    mqttClient = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, "/mqtt", MQTT_CLIENT_ID);
                     
                     mqttClient.onConnectionLost = (responseObject) => {
                         if (responseObject.errorCode !== 0) {
