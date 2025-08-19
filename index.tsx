@@ -1,13 +1,18 @@
 
 
+
+declare global {
+    interface Window {
+        supabase: any;
+    }
+}
 // Supabase Client
-const { createClient } = (window as any).supabase;
+const { createClient } = window.supabase;
 const supabaseUrl = 'https://gldcodlptflzpvbiquxp.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsZGNvZGxwdGZsenB2YmlxdXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NDE2NzMsImV4cCI6MjA3MTAxNzY3M30.CwpFG_y3z-hLl7D0yddfc8psRrn1RBZbzkJa1x-rOlU';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Gemini AI Client
-declare const process: any; // Assume process.env is available
 import { GoogleGenAI, Type } from "@google/genai";
 const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 
@@ -96,13 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const $$ = (selector) => document.querySelectorAll(selector);
 
     // --- SUPABASE REAL-TIME SERVICE ---
-    interface RoomParticipant {
-        user: string;
-        status: string;
-        joinedAt: number;
-    }
     let roomChannel = null;
-    let roomParticipants: {[key: string]: RoomParticipant} = {};
+    let roomParticipants = {};
     
     const joinRoom = async (roomId) => {
         if (!state.currentUser || !state.profile?.username) return;
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const presenceState = channel.presenceState();
             roomParticipants = {};
             for (const id in presenceState) {
-                const pres = presenceState[id][0] as any;
+                const pres = presenceState[id][0];
                 roomParticipants[id] = { user: pres.user, status: pres.status, joinedAt: pres.joinedAt };
             }
             renderParticipants(roomParticipants);
@@ -1190,9 +1190,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const startCustomTimer = () => {
         if(state.timer.isRunning) return;
         
-        let hours = Number(($('#timer-hours') as HTMLInputElement)?.value) || 0;
-        let minutes = Number(($('#timer-minutes') as HTMLInputElement)?.value) || 0;
-        let seconds = Number(($('#timer-seconds') as HTMLInputElement)?.value) || 0;
+        let hours = Number($('#timer-hours')?.value) || 0;
+        let minutes = Number($('#timer-minutes')?.value) || 0;
+        let seconds = Number($('#timer-seconds')?.value) || 0;
         let totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
         if(totalSeconds <= 0) return;
@@ -1207,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.timer.timeRemaining--;
             updateCustomTimerDisplay();
             if(state.timer.timeRemaining <= 0) {
-                const subjectId = ($('#timer-subject') as HTMLSelectElement)?.value;
+                const subjectId = $('#timer-subject')?.value;
                 const durationMinutes = Math.round(state.timer.initialDuration / 60);
                 
                 pauseCustomTimer();
@@ -1319,13 +1319,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- STUDY ROOMS ---
-    const renderParticipants = (participants: {[key: string]: RoomParticipant}) => {
+    const renderParticipants = (participants) => {
         const list = $('#participant-list');
         if (!list) return;
         
-        const sortedParticipants = Object.values(participants).sort((a, b) => a.joinedAt - b.joinedAt);
+        const sortedParticipants = Object.values(participants).sort((a: any, b: any) => a.joinedAt - b.joinedAt);
 
-        list.innerHTML = sortedParticipants.map(data => `
+        list.innerHTML = sortedParticipants.map((data: any) => `
             <li class="participant-item">
                 <span class="participant-name">${data.user}</span>
                 <span class="participant-status">${data.status || 'Idle'}</span>
@@ -1488,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
     };
 
-    const getTotalStudyMinutes = (state) => state.sessions.reduce((total, s) => total + Number(s.duration || 0), 0);
+    const getTotalStudyMinutes = (state: any): number => state.sessions.reduce((total, s) => total + Number(s.duration || 0), 0);
 
     const getStudyMinutesForMonth = (subjectId) => {
         const now = new Date();
@@ -1561,7 +1561,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- Navigation ---
         const handleNavClick = (e) => {
-            const link = e.target.closest('.nav-link, .bottom-nav-link');
+            const link = (e.target as Element).closest('.nav-link, .bottom-nav-link');
             if (link) { 
                 e.preventDefault(); 
                 navigateToPage(link.dataset.page); 
@@ -1576,10 +1576,11 @@ document.addEventListener('DOMContentLoaded', () => {
         $('.sidebar-overlay').addEventListener('click', toggleSidebar);
 
         document.body.addEventListener('click', (e) => {
-            if ((e.target as Element).matches('.modal-container:not(#log-session-modal) .modal-close-btn, .modal-container:not(#log-session-modal) .modal-cancel-btn')) {
+            const target = e.target as Element;
+            if (target.matches('.modal-container:not(#log-session-modal) .modal-close-btn, .modal-container:not(#log-session-modal) .modal-cancel-btn')) {
                 hideAllModals();
             }
-            if ((e.target as Element).closest('#gemini-suggest-btn')) {
+            if (target.closest('#gemini-suggest-btn')) {
                 getStudyBreakSuggestion();
             }
         });
@@ -1594,14 +1595,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         $('#main-header-content').addEventListener('click', (e) => {
-             if (e.target.closest('#add-subject-btn')) openSubjectModal();
-             if (e.target.closest('#new-note-btn')) openNoteModal();
+             if ((e.target as Element).closest('#add-subject-btn')) openSubjectModal();
+             if ((e.target as Element).closest('#new-note-btn')) openNoteModal();
         });
         $('#add-subject-btn, #subjects-fab').addEventListener('click', openSubjectModal);
 
         $('#subjects-grid').addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.edit-subject-btn');
-            const deleteBtn = e.target.closest('.delete-subject-btn');
+            const editBtn = (e.target as Element).closest('.edit-subject-btn');
+            const deleteBtn = (e.target as Element).closest('.delete-subject-btn');
             if (editBtn) {
                 const subject = getSubjectById(editBtn.dataset.id);
                 if(subject) {
@@ -1634,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#new-note-btn').addEventListener('click', openNoteModal);
 
         $('#notes-list').addEventListener('click', (e) => {
-            const noteItem = e.target.closest('.note-item');
+            const noteItem = (e.target as Element).closest('.note-item');
             if (noteItem) {
                 state.ui.selectedNoteId = parseInt(noteItem.dataset.id);
                 renderNotes();
@@ -1644,9 +1645,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         $('#note-view-panel').addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.edit-note-btn');
-            const deleteBtn = e.target.closest('.delete-note-btn');
-            const backBtn = e.target.closest('.back-to-list-btn');
+            const editBtn = (e.target as Element).closest('.edit-note-btn');
+            const deleteBtn = (e.target as Element).closest('.delete-note-btn');
+            const backBtn = (e.target as Element).closest('.back-to-list-btn');
             if (editBtn) {
                 const note = state.notes.find(n => n.id == editBtn.dataset.id);
                 if (note) {
@@ -1671,7 +1672,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#notes-search-bar').addEventListener('input', renderNotes);
         $('#note-form').addEventListener('submit', handleNoteForm);
         $('.editor-toolbar').addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
+            const btn = (e.target as Element).closest('button');
             if(btn && btn.dataset.command) {
                 document.execCommand(btn.dataset.command, false, null);
                 $('#note-content-editor').focus();
@@ -1690,15 +1691,15 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#reminder-form').addEventListener('submit', handleReminderForm);
         
         $('#dashboard-reminder-list').addEventListener('click', async (e) => {
-            const reminderId = e.target.closest('.reminder-item')?.dataset.id || (e.target as HTMLElement).dataset.reminderId;
+            const target = e.target as HTMLElement;
+            const reminderId = target.closest('.reminder-item')?.dataset.id || target.dataset.reminderId;
             if (!reminderId) return;
 
-            const target = e.target as HTMLInputElement;
             if (target.matches('.reminder-checkbox')) {
                 const reminder = state.reminders.find(r => r.id == reminderId);
                 if (reminder) {
-                    reminder.completed = target.checked;
-                    await supabase.from('reminders').update({ completed: target.checked }).eq('id', reminderId);
+                    reminder.completed = (target as HTMLInputElement).checked;
+                    await supabase.from('reminders').update({ completed: (target as HTMLInputElement).checked }).eq('id', reminderId);
                     renderDashboardReminders();
                     renderCalendar();
                 }
@@ -1722,7 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#calendar-container').addEventListener('click', (e) => {
             const reminderItem = (e.target as Element).closest('.reminder-item-calendar');
             if (reminderItem) {
-                const reminder = state.reminders.find(r => r.id == (reminderItem as HTMLElement).dataset.reminderId);
+                const reminder = state.reminders.find(r => r.id == reminderItem.dataset.reminderId);
                 if (reminder) {
                      $('#reminder-id').value = reminder.id;
                     $('#reminder-title').value = reminder.title;
@@ -1736,8 +1737,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const dayCell = (e.target as Element).closest('.calendar-day');
-            if (dayCell && (dayCell as HTMLElement).dataset.date) {
-                state.ui.selectedDate = (dayCell as HTMLElement).dataset.date;
+            if (dayCell && dayCell.dataset.date) {
+                state.ui.selectedDate = dayCell.dataset.date;
                 $('#reminder-form').reset();
                 $('#reminder-id').value = '';
                 $('#reminder-date').value = state.ui.selectedDate;
@@ -1803,9 +1804,9 @@ document.addEventListener('DOMContentLoaded', () => {
             state.room.isRunning ? pauseRoomTimer(true) : startRoomTimer();
         });
         $('#room-pomodoro-modes').addEventListener('click', (e) => {
-            const modeBtn = (e.target as Element).closest('.pomodoro-mode') as HTMLElement;
+            const modeBtn = (e.target as Element).closest('.pomodoro-mode');
             if(modeBtn && modeBtn.dataset.mode) {
-                switchRoomTimerMode(modeBtn.dataset.mode);
+                switchPomodoroMode(modeBtn.dataset.mode);
             }
         });
 
@@ -1830,7 +1831,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await supabase.from('profiles').update({ settings: state.settings }).eq('id', state.currentUser.id);
         });
         $('#color-palette').addEventListener('click', async (e) => {
-            const swatch = (e.target as Element).closest('.color-swatch') as HTMLElement;
+            const swatch = (e.target as Element).closest('.color-swatch');
             if (swatch) {
                 state.settings.accentTheme = swatch.dataset.color;
                 applySettings();
@@ -1932,7 +1933,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'stopwatch', label: 'Stopwatch', icon: '<path d="M12 6c-3.86 0-7 3.14-7 7s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"></path><path d="M11 1h2v3h-2zM4.93 4.93l1.41 1.41-1.06 1.06-1.41-1.41zM19.07 4.93l-1.41 1.41 1.06 1.06 1.41-1.41zM10.4 12.4L13 15v-5h-2.6z"></path>', mobile: false },
         { id: 'notes', label: 'Notes', icon: '<path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"></path>', mobile: false },
         { id: 'subjects', label: 'Subjects', icon: '<path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path>', mobile: false },
-        { id: 'settings', label: 'Settings', icon: '<path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>', mobile: false },
+        { id: 'settings', label: 'Settings', icon: '<path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>', mobile: false },
     ];
 
     const renderNavigation = () => {
